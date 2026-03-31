@@ -148,6 +148,7 @@ UPROGS=\
 	$U/_dorphan\
 	$U/_throttle\
 	$U/_spin\
+	$U/_demo\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
