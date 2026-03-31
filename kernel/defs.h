@@ -143,6 +143,11 @@ void            trapinithart(void);
 extern struct spinlock tickslock;
 void            prepare_return(void);
 
+// throttle state (defined by Partner A in proc.c or trap.c)
+extern int            active_ticks_limit;
+extern int            idle_ticks_limit;
+extern struct spinlock throttle_lock;
+
 // uart.c
 void            uartinit(void);
 void            uartintr(void);
