@@ -12,4 +12,6 @@
 #define FSSIZE       2000  // size of file system in blocks
 #define MAXPATH      128   // maximum file path name
 #define USERSTACK    1     // user stack pages
+#define BUFFER_SIZE  1024  // size of the i/o wirte buffer
+#define MAX_BUFFER_WRITE_SIZE 64  // maximum number of bytes that can be written to the buffer at once  
 
