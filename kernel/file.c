@@ -17,6 +17,20 @@
 static char buffer[BUFFER_SIZE];
 static int buffer_used = 0;
 static struct spinlock buffer_lock;
+static int console_batching_enabled = 1;
+static int console_batch_debug = 1;
+
+static void
+batch_debug(const char *msg)
+{
+  if(console_batch_debug == 0)
+    return;
+
+  while(*msg){
+    consputc(*msg);
+    msg++;
+  }
+}
 
 // Drain buffered console bytes to the UART. Does not sleep while holding buffer_lock.
 static void
@@ -183,11 +197,14 @@ filewrite(struct file *f, uint64 addr, int n)
         return -1;
 
       
-       // Only write to the buffer if the write size is less than the max buffer write size and the device is the console
-      if (n < MAX_BUFFER_WRITE_SIZE && f->major == CONSOLE) {
+      // Only write to the buffer if the write size is less than the max buffer write size and the device is the console
+      if (console_batching_enabled && n > 2 && n < MAX_BUFFER_WRITE_SIZE && f->major == CONSOLE) {
+        int should_flush = 0;
+  
         acquire(&buffer_lock);
         if(buffer_used + n > BUFFER_SIZE){
           release(&buffer_lock);
+          batch_debug("[sys]: flushing full buffer\n");
           flush_console_buffer();
           acquire(&buffer_lock);
         }
@@ -202,14 +219,24 @@ filewrite(struct file *f, uint64 addr, int n)
           return -1;
         }
         buffer_used += n;
+        for(int i = 0; i < n; i++){
+          if(buffer[buffer_used - n + i] == '\n'){
+            should_flush = 1;
+            break;
+          }
+        }
+      
         release(&buffer_lock);
-        // Quick path: flush after each small write so the system stays usable until batch policy lands.
-        flush_console_buffer();
+        if(should_flush)
+          flush_console_buffer();
         return n;
       }
 
-      if(f->major == CONSOLE)
+      if(console_batching_enabled && f->major == CONSOLE){
+        if(n >= MAX_BUFFER_WRITE_SIZE)
+          batch_debug("[sys]: direct write\n");
         flush_console_buffer();
+      }
       ret = devsw[f->major].write(1, addr, n);
     } else if(f->type == FD_INODE){
       // write a few blocks at a time to avoid exceeding
