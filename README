@@ -1,7 +1,18 @@
 # OS Mini Project ReadMe
 
+## Demoing CPU Throttling
 
-How to test I/O Batcher system
+1. For consistency, start xv6 with only one CPU
+
+```bash
+make qemu CPUS=1
+```
+
+2. Run the `demo` program. Wait a minute or two for it to complete
+
+
+## How to test I/O Batcher system
+
 There are two ways to test this. First there is a user program called batchtest.c. 
 This is a basic console write program to showcase the batching system in action.
 The second test option is to comment out the flush_console_buffer function usage in file.c.
